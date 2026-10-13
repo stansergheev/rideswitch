@@ -13,7 +13,7 @@ public final class Nodes {
 
     private static final int MAX_NODES = 4000;
 
-    /** Lowercase, straight apostrophes, single spaces. */
+    /** Lowercase, straight apostrophes, ё→е, single spaces. */
     public static String norm(CharSequence s) {
         if (s == null) return "";
         return s.toString()
@@ -21,6 +21,7 @@ public final class Nodes {
                 .replace('‘', '\'')
                 .replace(' ', ' ')
                 .toLowerCase(Locale.US)
+                .replace('ё', 'е')
                 .replaceAll("\\s+", " ")
                 .trim();
     }

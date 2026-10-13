@@ -25,29 +25,36 @@ public class KeywordsActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setTitle(L.t(this, "Keywords", "Ключевые слова"));
 
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(16);
         col.setPadding(pad, pad, pad, pad);
 
-        col.addView(text("One phrase per line, not case-sensitive. A phrase matches any text that contains it. "
-                + "Start a line with = to require an exact match (for example =go). "
-                + "Turn on Screen dump to see the exact words each app shows.", 14, false));
+        col.addView(text(L.t(this,
+                "One phrase per line, not case-sensitive. A phrase matches any text that contains it. "
+                        + "Start a line with = to require an exact match (for example =go). "
+                        + "English and Russian words can be mixed. "
+                        + "Turn on Screen dump to see the exact words each app shows.",
+                "Одна фраза на строку, регистр не важен. Фраза срабатывает, если она есть внутри текста. "
+                        + "Начните строку с =, чтобы требовать точное совпадение (например =go). "
+                        + "Можно смешивать английские и русские слова. "
+                        + "Включите «Запись экрана», чтобы увидеть точный текст каждого приложения."), 14, false));
 
         for (AppProfile p : AppProfile.ALL) {
             TextView h = text(p.label + " Driver", 20, true);
             h.setPadding(0, dp(24), 0, dp(4));
             col.addView(h);
 
-            col.addView(text("Package name", 14, true));
+            col.addView(text(L.t(this, "Package name", "Имя пакета"), 14, true));
             EditText pkg = field(p.pkg(this), false);
             fields.put(p.pkgKey(), pkg);
             col.addView(pkg);
 
             for (int i = 0; i < AppProfile.LISTS.length; i++) {
                 String list = AppProfile.LISTS[i];
-                TextView label = text(AppProfile.LIST_LABELS[i], 14, true);
+                TextView label = text(AppProfile.listLabel(this, i), 14, true);
                 label.setPadding(0, dp(12), 0, 0);
                 col.addView(label);
                 EditText e = field(p.text(this, list), true);
@@ -62,13 +69,13 @@ public class KeywordsActivity extends Activity {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
 
         Button save = new Button(this);
-        save.setText("Save");
+        save.setText(L.t(this, "Save", "Сохранить"));
         save.setAllCaps(false);
         save.setOnClickListener(v -> save());
         buttons.addView(save, lp);
 
         Button reset = new Button(this);
-        reset.setText("Reset to defaults");
+        reset.setText(L.t(this, "Reset to defaults", "По умолчанию"));
         reset.setAllCaps(false);
         reset.setOnClickListener(v -> resetDefaults());
         buttons.addView(reset, new LinearLayout.LayoutParams(lp));
@@ -88,7 +95,7 @@ public class KeywordsActivity extends Activity {
         ed.apply();
         RideSwitchService s = RideSwitchService.instance;
         if (s != null) s.applyPackageFilter();
-        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, L.t(this, "Saved", "Сохранено"), Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -99,7 +106,8 @@ public class KeywordsActivity extends Activity {
                 fields.get(p.listKey(list)).setText(p.defaultText(list));
             }
         }
-        Toast.makeText(this, "Defaults restored — tap Save to keep them", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, L.t(this, "Defaults restored — tap Save to keep them",
+                "Восстановлено — нажмите «Сохранить»"), Toast.LENGTH_SHORT).show();
     }
 
     private EditText field(String value, boolean multiline) {

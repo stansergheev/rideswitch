@@ -12,6 +12,7 @@ import java.util.List;
  * Keyword rules (case-insensitive):
  *   go offline   -> matches any text that CONTAINS "go offline"
  *   =go          -> matches text that is EXACTLY "go"
+ * Each list has English and Russian words, so it works whichever language Uber/Lyft is set to.
  * Every list can be edited in the app (Edit keywords), so it can be fixed after an
  * Uber/Lyft update without a new build.
  */
@@ -26,7 +27,7 @@ public final class AppProfile {
 
     public static final String[] LISTS = {ACTIVE, IDLE, GO_OFFLINE, IS_OFFLINE, GO_ONLINE, IS_ONLINE};
 
-    public static final String[] LIST_LABELS = {
+    private static final String[] LABELS_EN = {
             "Trip in progress (shows after you accept a ride)",
             "Trip finished / waiting for requests",
             "Buttons to tap to go offline",
@@ -35,41 +36,70 @@ public final class AppProfile {
             "Text that shows when online",
     };
 
+    private static final String[] LABELS_RU = {
+            "Поездка идёт (появляется после принятия заказа)",
+            "Поездка завершена / ожидание заказов",
+            "Кнопки, чтобы уйти в офлайн",
+            "Текст, когда вы не в сети",
+            "Кнопки, чтобы выйти в сеть",
+            "Текст, когда вы в сети",
+    };
+
+    public static String listLabel(Context c, int i) {
+        return L.ru(c) ? LABELS_RU[i] : LABELS_EN[i];
+    }
+
     public static final AppProfile UBER = new AppProfile("uber", "Uber", "com.ubercab.driver",
             new String[][]{
                     // ACTIVE
                     {"picking up", "swipe to start", "start trip", "start uber", "swipe to complete",
                             "complete trip", "complete uber", "dropping off", "i've arrived", "arrived at pickup",
-                            "waiting for rider"},
+                            "waiting for rider",
+                            "начать поездку", "завершить поездку", "я на месте", "проведите, чтобы начать",
+                            "проведите, чтобы завершить", "ожидание пассажира", "забрать пассажира",
+                            "высадить пассажира"},
                     // IDLE
                     {"you're online", "finding trips", "finding requests", "rate your rider", "rate rider",
-                            "how was your trip"},
+                            "how was your trip",
+                            "вы в сети", "поиск поездок", "поиск заказов", "оцените пассажира",
+                            "как прошла поездка"},
                     // GO_OFFLINE
-                    {"go offline", "stop new requests"},
+                    {"go offline", "stop new requests",
+                            "выйти из сети", "перейти в офлайн", "уйти в офлайн", "не принимать заказы"},
                     // IS_OFFLINE
-                    {"you're offline", "go online", "=go"},
+                    {"you're offline", "go online", "=go",
+                            "вы не в сети", "вы офлайн", "выйти в сеть"},
                     // GO_ONLINE
-                    {"=go", "go online"},
+                    {"=go", "go online",
+                            "выйти в сеть", "=в сеть"},
                     // IS_ONLINE
-                    {"you're online", "finding trips", "finding requests"},
+                    {"you're online", "finding trips", "finding requests",
+                            "вы в сети", "поиск поездок", "поиск заказов"},
             });
 
     public static final AppProfile LYFT = new AppProfile("lyft", "Lyft", "com.lyft.android.driver",
             new String[][]{
                     // ACTIVE
                     {"arrived", "confirm pickup", "swipe to confirm", "picking up", "dropping off", "drop off",
-                            "complete ride", "end ride", "waiting for passenger", "waiting for rider"},
+                            "complete ride", "end ride", "waiting for passenger", "waiting for rider",
+                            "прибыл", "подтвердить посадку", "забрать пассажира", "высадить пассажира",
+                            "завершить поездку", "ожидание пассажира"},
                     // IDLE
                     {"you're online", "looking for rides", "finding rides", "rate your passenger", "rate your rider",
-                            "rate rider"},
+                            "rate rider",
+                            "вы в сети", "поиск поездок", "оцените пассажира"},
                     // GO_OFFLINE
-                    {"go offline"},
+                    {"go offline",
+                            "выйти из сети", "перейти в офлайн", "уйти в офлайн"},
                     // IS_OFFLINE
-                    {"you're offline", "go online"},
+                    {"you're offline", "go online",
+                            "вы не в сети", "вы офлайн", "выйти в сеть"},
                     // GO_ONLINE
-                    {"go online", "=go"},
+                    {"go online", "=go",
+                            "выйти в сеть", "=в сеть"},
                     // IS_ONLINE
-                    {"you're online", "looking for rides", "finding rides"},
+                    {"you're online", "looking for rides", "finding rides",
+                            "вы в сети", "поиск поездок"},
             });
 
     public static final AppProfile[] ALL = {UBER, LYFT};

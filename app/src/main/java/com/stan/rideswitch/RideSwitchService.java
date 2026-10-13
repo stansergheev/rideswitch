@@ -72,14 +72,14 @@ public class RideSwitchService extends AccessibilityService {
         super.onServiceConnected();
         instance = this;
         applyPackageFilter();
-        LogBuffer.add("Service connected — watching " + AppProfile.UBER.pkg(this) + " and " + AppProfile.LYFT.pkg(this));
+        LogBuffer.add(L.t(this, "Service connected — watching ", "Служба включена — слежу за ") + AppProfile.UBER.pkg(this) + L.t(this, " and ", " и ") + AppProfile.LYFT.pkg(this));
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
         instance = null;
         handler.removeCallbacksAndMessages(null);
-        LogBuffer.add("Service stopped");
+        LogBuffer.add(L.t(this, "Service stopped", "Служба остановлена"));
         return super.onUnbind(intent);
     }
 
@@ -141,15 +141,15 @@ public class RideSwitchService extends AccessibilityService {
 
         if (active && !wasActive) {
             tripActive.put(p.id, true);
-            LogBuffer.add("Trip accepted on " + p.label);
+            LogBuffer.add(L.t(this, "Trip accepted on ", "Принят заказ в ") + p.label);
             if (Boolean.TRUE.equals(tripActive.get(other.id))) {
-                LogBuffer.add(other.label + " also has a trip — leaving it alone");
+                LogBuffer.add(other.label + L.t(this, " also has a trip — leaving it alone", ": там тоже идёт поездка — не трогаю"));
                 return;
             }
             startJob(new Job(other, true, p.pkg(this)));
         } else if (wasActive && idle && !active) {
             tripActive.put(p.id, false);
-            LogBuffer.add("Trip finished on " + p.label);
+            LogBuffer.add(L.t(this, "Trip finished on ", "Поездка завершена в ") + p.label);
             if (Prefs.autoOnline(this) && wentOfflineByUs.contains(other.id)) {
                 startJob(new Job(other, false, p.pkg(this)));
             }
@@ -161,11 +161,13 @@ public class RideSwitchService extends AccessibilityService {
     private void startJob(Job j) {
         job = j;
         j.started = SystemClock.uptimeMillis();
-        String what = j.goOffline ? "Taking " + j.target.label + " offline" : "Bringing " + j.target.label + " back online";
+        String what = j.goOffline
+                ? L.t(this, "Taking " + j.target.label + " offline", "Перевожу " + j.target.label + " в офлайн")
+                : L.t(this, "Bringing " + j.target.label + " back online", "Возвращаю " + j.target.label + " в сеть");
         LogBuffer.add(what + "…");
         toast(what);
         if (!launch(j.target.pkg(this))) {
-            finishJob(j.target.label + " Driver isn't installed (or the package name is wrong)");
+            finishJob(j.target.label + L.t(this, " Driver isn't installed (or the package name is wrong)", " Driver не установлен (или неверное имя пакета)"));
             return;
         }
         handler.postDelayed(this::stepJob, 1200);
@@ -178,7 +180,8 @@ public class RideSwitchService extends AccessibilityService {
         AppProfile t = j.target;
 
         if (now - j.started > JOB_TIMEOUT_MS) {
-            finishJob("Couldn't finish on " + t.label + " — turn on Screen dump and check the log for the button text");
+            finishJob(L.t(this, "Couldn't finish on " + t.label + " — turn on Screen dump and check the log for the button text",
+                    "Не получилось в " + t.label + " — включите «Запись экрана» и найдите текст кнопки в журнале"));
             return;
         }
 
@@ -197,7 +200,7 @@ public class RideSwitchService extends AccessibilityService {
 
         if (j.goOffline && Nodes.anyMatch(texts, t.keywords(this, AppProfile.ACTIVE))) {
             tripActive.put(t.id, true);
-            finishJob(t.label + " has a trip in progress — left it alone");
+            finishJob(t.label + L.t(this, " has a trip in progress — left it alone", ": идёт поездка — не трогаю"));
             return;
         }
 
@@ -205,10 +208,10 @@ public class RideSwitchService extends AccessibilityService {
         if (Nodes.anyMatch(texts, t.keywords(this, doneList))) {
             if (j.goOffline) {
                 if (j.taps > 0) wentOfflineByUs.add(t.id);
-                finishJob(j.taps > 0 ? t.label + " is now offline" : t.label + " was already offline");
+                finishJob(t.label + (j.taps > 0 ? L.t(this, " is now offline", " теперь не в сети") : L.t(this, " was already offline", " уже был не в сети")));
             } else {
                 wentOfflineByUs.remove(t.id);
-                finishJob(t.label + " is back online");
+                finishJob(t.label + L.t(this, " is back online", " снова в сети"));
             }
             return;
         }
@@ -220,7 +223,8 @@ public class RideSwitchService extends AccessibilityService {
                 boolean ok = tap(button);
                 j.taps++;
                 j.lastTap = now;
-                LogBuffer.add("Tapped \"" + Nodes.label(button) + "\" in " + t.label + (ok ? "" : " (tap failed)"));
+                LogBuffer.add(L.t(this, "Tapped \"", "Нажал «") + Nodes.label(button) + L.t(this, "\" in ", "» в ") + t.label
+                        + (ok ? "" : L.t(this, " (tap failed)", " (не сработало)")));
             }
         }
         handler.postDelayed(this::stepJob, POLL_MS);
@@ -243,7 +247,7 @@ public class RideSwitchService extends AccessibilityService {
 
     void runTest(AppProfile target, boolean goOffline) {
         if (job != null) {
-            toast("Busy — try again in a few seconds");
+            toast(L.t(this, "Busy — try again in a few seconds", "Занят — попробуйте через пару секунд"));
             return;
         }
         startJob(new Job(target, goOffline, getPackageName()));
@@ -252,18 +256,18 @@ public class RideSwitchService extends AccessibilityService {
     void resetState() {
         tripActive.clear();
         wentOfflineByUs.clear();
-        LogBuffer.add("Trip state reset");
+        LogBuffer.add(L.t(this, "Trip state reset", "Состояние поездок сброшено"));
     }
 
     String describeState() {
         StringBuilder sb = new StringBuilder();
         for (AppProfile p : AppProfile.ALL) {
             sb.append(p.label).append(": ")
-                    .append(Boolean.TRUE.equals(tripActive.get(p.id)) ? "on a trip" : "no trip");
-            if (wentOfflineByUs.contains(p.id)) sb.append(" (taken offline by RideSwitch)");
+                    .append(Boolean.TRUE.equals(tripActive.get(p.id)) ? L.t(this, "on a trip", "в поездке") : L.t(this, "no trip", "нет поездки"));
+            if (wentOfflineByUs.contains(p.id)) sb.append(L.t(this, " (taken offline by RideSwitch)", " (отключён RideSwitch)"));
             sb.append('\n');
         }
-        if (job != null) sb.append("Working on ").append(job.target.label).append("…\n");
+        if (job != null) sb.append(L.t(this, "Working on ", "Работаю с ")).append(job.target.label).append("…\n");
         return sb.toString().trim();
     }
 
@@ -308,7 +312,7 @@ public class RideSwitchService extends AccessibilityService {
             startActivity(i);
             return true;
         } catch (RuntimeException e) {
-            LogBuffer.add("Couldn't open " + pkg + ": " + e.getMessage());
+            LogBuffer.add(L.t(this, "Couldn't open ", "Не удалось открыть ") + pkg + ": " + e.getMessage());
             return false;
         }
     }
@@ -342,7 +346,7 @@ public class RideSwitchService extends AccessibilityService {
         lastDumpHash.put(p.id, hash);
         String joined = String.join(" | ", texts);
         if (joined.length() > 1500) joined = joined.substring(0, 1500) + " …";
-        LogBuffer.add("[" + p.label + " screen] " + joined);
+        LogBuffer.add("[" + p.label + L.t(this, " screen] ", " экран] ") + joined);
     }
 
     private void toast(String msg) {

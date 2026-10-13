@@ -30,7 +30,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        build();
+    }
 
+    /** Builds the whole screen in the current language. */
+    private void build() {
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         int pad = dp(16);
@@ -42,48 +46,58 @@ public class MainActivity extends Activity {
         title.setTypeface(Typeface.DEFAULT_BOLD);
         col.addView(title);
 
-        TextView blurb = text("Accept a ride on Uber or Lyft and RideSwitch takes the other app offline for you.", 14);
-        col.addView(blurb);
+        col.addView(text(t("Accept a ride on Uber or Lyft and RideSwitch takes the other app offline for you.",
+                "Примите заказ в Uber или Lyft — RideSwitch сам уведёт другое приложение в офлайн."), 14));
+
+        col.addView(button(languageLabel(), v -> {
+            String m = L.mode(this);
+            L.setMode(this, "auto".equals(m) ? "en" : "en".equals(m) ? "ru" : "auto");
+            build();
+        }));
 
         statusView = text("", 15);
         statusView.setPadding(0, dp(12), 0, dp(4));
         col.addView(statusView);
 
-        col.addView(button("Open Accessibility settings",
+        col.addView(button(t("Open Accessibility settings", "Открыть настройки спец. возможностей"),
                 v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))));
-        col.addView(button("Open RideSwitch app info (for \"Allow restricted settings\")", v -> {
+        col.addView(button(t("Open RideSwitch app info (for \"Allow restricted settings\")",
+                "Сведения о приложении (для «Разрешить ограниченные настройки»)"), v -> {
             Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
             startActivity(i);
         }));
 
-        col.addView(header("Settings"));
-        col.addView(toggle("RideSwitch on", Prefs.ENABLED, true));
-        col.addView(toggle("Bring the other app back online after the trip", Prefs.AUTO_ONLINE, true));
-        col.addView(toggle("Screen dump (logs on-screen text, for fixing keywords)", Prefs.DEBUG_DUMP, false));
+        col.addView(header(t("Settings", "Настройки")));
+        col.addView(toggle(t("RideSwitch on", "RideSwitch включён"), Prefs.ENABLED, true));
+        col.addView(toggle(t("Bring the other app back online after the trip",
+                "Возвращать другое приложение в сеть после поездки"), Prefs.AUTO_ONLINE, true));
+        col.addView(toggle(t("Screen dump (logs on-screen text, for fixing keywords)",
+                "Запись экрана (пишет текст с экрана в журнал, для настройки слов)"), Prefs.DEBUG_DUMP, false));
 
-        col.addView(header("Test it (while parked)"));
+        col.addView(header(t("Test it (while parked)", "Проверка (на стоянке)")));
         col.addView(row(
-                button("Uber offline", v -> test(AppProfile.UBER, true)),
-                button("Lyft offline", v -> test(AppProfile.LYFT, true))));
+                button(t("Uber offline", "Uber офлайн"), v -> test(AppProfile.UBER, true)),
+                button(t("Lyft offline", "Lyft офлайн"), v -> test(AppProfile.LYFT, true))));
         col.addView(row(
-                button("Uber online", v -> test(AppProfile.UBER, false)),
-                button("Lyft online", v -> test(AppProfile.LYFT, false))));
+                button(t("Uber online", "Uber в сеть"), v -> test(AppProfile.UBER, false)),
+                button(t("Lyft online", "Lyft в сеть"), v -> test(AppProfile.LYFT, false))));
         col.addView(row(
-                button("Reset trip state", v -> {
+                button(t("Reset trip state", "Сбросить состояние"), v -> {
                     RideSwitchService s = RideSwitchService.instance;
                     if (s != null) s.resetState();
                     refresh();
                 }),
-                button("Edit keywords", v -> startActivity(new Intent(this, KeywordsActivity.class)))));
+                button(t("Edit keywords", "Ключевые слова"),
+                        v -> startActivity(new Intent(this, KeywordsActivity.class)))));
 
-        col.addView(header("Log"));
+        col.addView(header(t("Log", "Журнал")));
         col.addView(row(
-                button("Copy log", v -> {
+                button(t("Copy log", "Скопировать"), v -> {
                     ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                     cm.setPrimaryClip(ClipData.newPlainText("RideSwitch log", LogBuffer.text()));
-                    Toast.makeText(this, "Log copied", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, t("Log copied", "Журнал скопирован"), Toast.LENGTH_SHORT).show();
                 }),
-                button("Clear log", v -> LogBuffer.clear())));
+                button(t("Clear log", "Очистить"), v -> LogBuffer.clear())));
 
         logView = text("", 12);
         logView.setTypeface(Typeface.MONOSPACE);
@@ -94,6 +108,8 @@ public class MainActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         scroll.addView(col);
         setContentView(scroll);
+        setTitle("RideSwitch");
+        refresh();
     }
 
     @Override
@@ -110,28 +126,41 @@ public class MainActivity extends Activity {
     }
 
     private void refresh() {
+        if (statusView == null) return;
         StringBuilder sb = new StringBuilder();
         if (isServiceEnabled()) {
-            sb.append("✅ Accessibility permission is on\n");
+            sb.append(t("✅ Accessibility permission is on\n", "✅ Доступ к спец. возможностям включён\n"));
         } else {
-            sb.append("⚠️ Turn on RideSwitch in Accessibility settings.\n")
-              .append("If it's greyed out: App info → ⋮ menu → Allow restricted settings, then try again.\n");
+            sb.append(t("⚠️ Turn on RideSwitch in Accessibility settings.\n",
+                    "⚠️ Включите RideSwitch в настройках спец. возможностей.\n"))
+              .append(t("If it's greyed out: App info → ⋮ menu → Allow restricted settings, then try again.\n",
+                    "Если переключатель серый: Сведения о приложении → меню ⋮ → Разрешить ограниченные настройки, затем снова.\n"));
         }
         for (AppProfile p : AppProfile.ALL) {
             boolean installed = getPackageManager().getLaunchIntentForPackage(p.pkg(this)) != null;
             sb.append(installed ? "✅ " : "❌ ").append(p.label).append(" Driver ")
-              .append(installed ? "found" : "not found (" + p.pkg(this) + ")").append('\n');
+              .append(installed ? t("found", "найден") : t("not found", "не найден") + " (" + p.pkg(this) + ")")
+              .append('\n');
         }
         RideSwitchService s = RideSwitchService.instance;
         if (s != null) sb.append('\n').append(s.describeState());
         statusView.setText(sb.toString().trim());
-        logView.setText(LogBuffer.text());
+        String log = LogBuffer.text();
+        logView.setText(log.isEmpty() ? t("(nothing yet)", "(пока пусто)") : log);
+    }
+
+    private String languageLabel() {
+        String m = L.mode(this);
+        String current = "en".equals(m) ? "English" : "ru".equals(m) ? "Русский"
+                : t("Auto (phone language)", "Авто (язык телефона)");
+        return "🌐 " + t("Language: ", "Язык: ") + current;
     }
 
     private void test(AppProfile p, boolean offline) {
         RideSwitchService s = RideSwitchService.instance;
         if (s == null) {
-            Toast.makeText(this, "Turn on RideSwitch in Accessibility settings first", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, t("Turn on RideSwitch in Accessibility settings first",
+                    "Сначала включите RideSwitch в настройках спец. возможностей"), Toast.LENGTH_LONG).show();
             return;
         }
         s.runTest(p, offline);
@@ -146,22 +175,26 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- tiny UI helpers
 
+    private String t(String en, String ru) {
+        return L.t(this, en, ru);
+    }
+
     private int dp(int v) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, getResources().getDisplayMetrics()));
     }
 
     private TextView text(String s, int sp) {
-        TextView t = new TextView(this);
-        t.setText(s);
-        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
-        return t;
+        TextView tv = new TextView(this);
+        tv.setText(s);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
+        return tv;
     }
 
     private TextView header(String s) {
-        TextView t = text(s, 18);
-        t.setTypeface(Typeface.DEFAULT_BOLD);
-        t.setPadding(0, dp(20), 0, dp(6));
-        return t;
+        TextView tv = text(s, 18);
+        tv.setTypeface(Typeface.DEFAULT_BOLD);
+        tv.setPadding(0, dp(20), 0, dp(6));
+        return tv;
     }
 
     private Button button(String label, View.OnClickListener onClick) {

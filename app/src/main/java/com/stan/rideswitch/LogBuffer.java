@@ -30,7 +30,7 @@ public final class LogBuffer {
             Iterator<String> it = LINES.descendingIterator();
             while (it.hasNext()) sb.append(it.next()).append('\n');
         }
-        return sb.length() == 0 ? "(nothing yet)" : sb.toString();
+        return sb.toString();
     }
 
     public static void clear() {
