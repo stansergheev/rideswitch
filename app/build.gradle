@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.stan.rideswitch'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.stan.rideswitch'
+        minSdk 26
+        targetSdk 34
+        versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger())
+        versionName "1.0." + (System.getenv('GITHUB_RUN_NUMBER') ?: '0')
+    }
+
+    // A fixed key, so each new build installs over the old one without uninstalling.
+    signingConfigs {
+        release {
+            storeFile file('rideswitch.jks')
+            storePassword 'rideswitch'
+            keyAlias 'rideswitch'
+            keyPassword 'rideswitch'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

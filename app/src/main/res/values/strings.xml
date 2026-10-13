@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RideSwitch</string>
+    <string name="a11y_description">RideSwitch watches the Uber Driver and Lyft Driver screens. When you accept a ride in one, it opens the other app and taps Go offline, then brings you back. It only reads and taps inside those two apps.</string>
+</resources>
